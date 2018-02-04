@@ -1,15 +1,18 @@
 const express = require('express');
-const MongoClient = require('mongodb').MongoClient;
+const mysql = require("mysql");
 const bodyParser = require('body-parser');
 const db = require('./config/db');
 const app = express();
 const port = 8000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
-MongoClient.connect(db.url, (err, database) => {
+
+const con = mysql.createConnection(db);
+
+con.connect(err => {
   if (err) {
-    return console.log(err);
+    console.log(err);
   }
-  require('./server')(app, database);
+  require('./server')(app, con);
   app.listen(port, () => console.log('We are live on ' + port));
 });

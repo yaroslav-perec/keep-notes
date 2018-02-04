@@ -1,67 +1,60 @@
-var ObjectID = require('mongodb').ObjectID;
-
 module.exports = function(app, database) {
-  const DB = database.db('test_database');
 
   app.get('/notes', (req, res) => {
-    DB.collection('notes').find().toArray((err, notes) => {
+    const sql = "SELECT * FROM notes ORDER BY id";
+
+    database.query(sql, (err, result) => {
       if (err) {
-        res.send({'error':'An error has occurred'});
-      } else {
-        res.send(notes);
+        res.send({ 'error': 'An error has occurred' });
       }
+      res.send(result);
     });
   });
 
   app.get('/notes/:id', (req, res) => {
     const ID = req.params.id;
-    const DETAILS = { '_id': new ObjectID(ID) };
+    const sql = "SELECT * FROM notes WHERE id = ?";
 
-    DB.collection('notes').findOne(DETAILS, (err, item) => {
+    database.query(sql, [ID], (err, result) => {
       if (err) {
-        res.send({'error':'An error has occurred'});
-      } else {
-        res.send(item);
+        res.send({ 'error': 'An error has occurred' });
       }
+      res.send(result);
     });
   });
 
   app.put('/notes/:id', (req, res) => {
     const ID = req.params.id;
-    const NOTE = { $set: { text: req.body.body, title: req.body.title } };
-    const DETAILS = { '_id': new ObjectID(ID) };
+    const sql = `UPDATE notes SET note = ?, date = NOW() WHERE id = ?`;
 
-    DB.collection('notes').updateOne(DETAILS, NOTE, err => {
+    database.query(sql, [req.body.note, ID], (err, result) => {
       if (err) {
-        res.send({'error':'An error has occurred'});
-      } else {
-        res.send(NOTE);
+        res.send({ 'error': 'An error has occurred' });
       }
+      res.send(result);
     });
   });
 
   app.delete('/notes/:id', (req, res) => {
     const ID = req.params.id;
-    const DETAILS = { '_id': new ObjectID(ID) };
+    const sql = "DELETE FROM notes WHERE id = ?";
 
-    DB.collection('notes').removeOne(DETAILS, err => {
+    database.query(sql, [ID], (err, result) => {
       if (err) {
-        res.send({'error': 'An error has occurred'});
-      } else {
-        res.send(`Note ${ID} deleted!`);
+        res.send({ 'error': 'An error has occurred' });
       }
+      res.send(`Notes deleted: ${result.affectedRows}`);
     });
   });
 
   app.post('/notes', (req, res) => {
-    const NOTE = { text: req.body.body, title: req.body.title };
+    const sql = "INSERT INTO notes (note, date) VALUES (?, NOW())";
 
-    DB.collection('notes').insertOne(NOTE, (err, result) => {
+    database.query(sql, [req.body.note], (err, result) => {
       if (err) {
         res.send({ 'error': 'An error has occurred' });
-      } else {
-        res.send(result.ops[0]);
       }
+      res.send(`1 record inserted, ID: ${result.insertId}`);
     });
   });
 };
